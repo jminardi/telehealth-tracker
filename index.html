@@ -39,12 +39,12 @@
       </template>
 
       <!-- Container to select and view sessions --->
-      <b-container >
+      <b-container>
         <b-row>
           <!-- Selectable list of all sessions --->
           <b-col cols="12" md="4">
             <b-list-group>
-              <b-list-group-item button v-for="(session, i) in sessions" v-on:click="sessionClicked(i);" :active="i === selectedSession">
+              <b-list-group-item button v-for="(session, i) in sessions" v-on:click="sessionClicked(i);" :active="i === selectedSession" :key="i">
                 <span v-show="session.editName == false" v-on:dblclick="session.editName = true">{{ session.name }}</span>
                 <input v-show="session.editName == true" v-model="session.name" v-on:blur="session.editName=false" v-on:keyup.enter="session.editName=false" v-on:click.stop="">
                 <b-badge variant="info" v-if="i === 0">Current</b-badge>
@@ -74,7 +74,7 @@
     <!------------------------------------------------------------------------------------------------------------------------->
     <!-- Main app container --------------------------------------------------------------------------------------------------->
     <!------------------------------------------------------------------------------------------------------------------------->
-    <b-container>
+    <b-container style="margin-top: 10px;">
 
       <!-- Current session management --->
       <b-row>
@@ -94,43 +94,59 @@
         </b-col>
       </b-row>
 
-      <!-- Task buttons --->
+      <!-- Task cards --->
       <b-row>
-        <b-col cols="6" md="4" v-for="(task, i) in tasks">
-          <b-card class="task-card" v-bind:class="{'task-card-active': task.active}" v-bind:style="{backgroundColor: task.active ? colors[i] : fadedColors[i]}" v-on:click="taskClicked(i)">
-            <b-container>
-              <b-row>
-                <b-col>
-                  <h4 v-show="task.editName == false" v-on:dblclick="task.editName = true">{{ task.name }}</h4>
-                  <input v-bind:id="'editName' + i" v-show="task.editName == true" v-model="task.name" v-on:blur="task.editName=false" v-on:keyup.enter="task.editName=false" v-on:click.stop="">
+        <!--- One task card for each task in this.tasks -->
+        <b-col cols="6" md="4" v-for="(task, i) in tasks" :key="i">
+          <b-container class="task-card" v-bind:class="{'task-card-active': task.active}" v-bind:style="{backgroundColor: task.active ? colors[i] : fadedColors[i]}" v-on:click="taskClicked(i)">
+              <b-row align-h="end">
+                <!--- Task Controls -->
+                <b-col cols="1">
+                  <b-dropdown dropleft no-caret size="sm" variant="outline-secondary" style="position: relative; left:-7px; top: -1px" v-on:click.stop="">
+                    <template slot="button-content">
+                      <i class="fas fa-ellipsis-v"></i>
+                    </template>
+                    <b-dropdown-form>
+                      <b-form-checkbox switch class="mb-3" v-model="task.exclusive">Exclusive</b-form-checkbox>
+                      <b-button block variant="outline-danger" size="sm" v-on:click.stop="deleteTask(i)"><i class="fas fa-trash"></i> Delete</b-button>
+                    </b-dropdown-form>
+                  </b-dropdown>
                 </b-col>
               </b-row>
               <b-row>
+                <!--- Task Name -->
                 <b-col>
-                  <h5 v-show="task.editTime == false" v-on:dblclick="task.editTime = true"><i class="fas fa-stopwatch"></i> {{ task.time | formatTime }}</h5>
-                  <input v-show="task.editTime == true" v-model.number="task.time" v-on:blur="task.editTime=false" v-on:keyup.enter="task.editTime=false" v-on:click.stop="">
+                  <h4>
+                    <span v-show="task.editName == false" v-on:dblclick="task.editName = true">{{ task.name }}</span>
+                    <input v-bind:id="'editName' + i" v-if="task.editName == true" v-model="task.name" v-on:blur="task.editName=false" v-on:keyup.enter="task.editName=false" v-on:click.stop="">
+                  </h4>
                 </b-col>
+              </b-row>
+              <b-row>
+                <!--- Task Time -->
                 <b-col>
-                  <b-button pill variant="outline-danger" size="sm" class="float-right" v-on:click.stop="deleteTask(i)"><i class="fas fa-trash"></i></b-button>
+                  <h5>
+                    <span v-show="task.editTime == false" v-on:dblclick="task.editTime = true"><i class="fas fa-stopwatch"></i> {{ task.time | formatTime }}</span>
+                    <b-input-group append="seconds" v-show="task.editTime == true" >
+                      <input v-model.number="task.time" v-on:blur="task.editTime=false" v-on:keyup.enter="task.editTime=false" v-on:click.stop="" append="seconds">
+                    </b-input-group>
+                  </h5>
                 </b-col>
               </b-row>
             </b-container>
-          </b-card>
         </b-col>
+        <!-- New Task form -->
         <b-col cols="6" md="4">
-          <b-card class="task-card">
-            <b-card-title>
-                <b-input v-model="newTaskName" class="mb-2 mr-sm-2 mb-sm-0" placeholder="New Task" ></b-input>
-            </b-card-title>
+          <b-container class="task-card" style="padding-top: 15px;">
+            <h4>
+                <b-input v-model="newTaskName" class="mb-2 mr-sm-2 mb-sm-0" v-on:keyup.enter="createNewTaskClicked" placeholder="New Task" ></b-input>
+            </h4>
                 <b-button block variant="outline-secondary" v-on:click="createNewTaskClicked">Create</b-button>
-          </b-card>
+          </b-container>
         </b-col>
       </b-row>
-
     </b-container>
-
   </div>
-
 
   <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
   <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>
@@ -138,10 +154,16 @@
   <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
   <script src="https://unpkg.com/bootstrap-vue@2.9.0/dist/bootstrap-vue.min.js"></script>
 
+<!------------------------------------------------------------------------------------------------------------------------->
+<!-- CSS ------------------------------------------------------------------------------------------------------------------>
+<!------------------------------------------------------------------------------------------------------------------------->
 <style>
 .task-card {
   margin-top: 10px;
   color: rgb(107, 107, 107);
+  border-radius: 4px;
+  border: 1px solid grey;
+  padding-bottom: 40px;
 }
 .task-card:hover {
   box-shadow: 0px 0px 5px rgb(177, 177, 177);
@@ -174,18 +196,12 @@
 </style>
 
 
+<!------------------------------------------------------------------------------------------------------------------------->
+<!-- Javascript ----------------------------------------------------------------------------------------------------------->
+<!------------------------------------------------------------------------------------------------------------------------->
 <script type="text/javascript">
 
-
-
-
-
-
-
-
-
 Vue.use(BootstrapVue)
-//Vue.use(IconsPlugin)
 
 Vue.filter('formatTime', function(value) {
   return new Date(value * 1000).toISOString().substr(11, 8);
@@ -193,24 +209,14 @@ Vue.filter('formatTime', function(value) {
 
 var vm = new Vue({
 el: '#app',
-data() { 
-  var tasks = [
-    this.task('Chart Review', true), 
-    this.task("Phone Call", false),
-    this.task("Reaching Patient", true),
-    this.task("Medical Visit", true),
-    this.task("Followup Coordination", true),
-    this.task("Patient Forms", true),
-    this.task("Note Writing", true),
-    this.task("Talk with Preceptor", true),
-  ];
+data: function() { 
   return {
-    tasks: this.load('tasks', tasks),
+    tasks: this.load('tasks', this.defaultTasks()),
     log: this.load('log', []),
     newTaskName: "",
     sessions: this.load('sessions', []),
     selectedSession: 0,
-    sessionNameIndex: 1,
+    sessionNameIndex: this.load('sessionNameIndex', 1),
 }},
 computed: {
   colors: function() {return this.interpolateColors("rgb(255,95,109)", "rgb(255,195,113)", this.tasks ? this.tasks.length : 1, 0.85)},
@@ -255,54 +261,21 @@ computed: {
 },
 
 mounted: function() {
-  window.setInterval(() => {
-    this.increaseActiveTasks()
-  }, 1000)
+  window.setInterval(() => {this.increaseActiveTasks()}, 1000)
   // first session is "current" and has live references to the log and tasks
-  this.sessions.splice(0, 1, {log: this.log, tasks: this.tasks, name:"Session " + this.sessionNameIndex, editName:false}),
-  this.sessionNameIndex += 1
+  this.sessions.splice(0, 1, {log: this.log, tasks: this.tasks, name:"Session " + this.sessionNameIndex, editName:false});
+  if (this.log.length === 0) this.logMsg('Session Started');
 },
+
 watch: {
   tasks: {handler(){localStorage.setItem('tasks', JSON.stringify(this.tasks))}, deep: true},
   log: {handler(){localStorage.setItem('log', JSON.stringify(this.log))}, deep: true},
   sessions: {handler(){localStorage.setItem('sessions', JSON.stringify(this.sessions))}, deep: true},
+  sessionNameIndex: {handler(){localStorage.setItem('sessionNameIndex', JSON.stringify(this.sessionNameIndex))}},
 },
 
 methods: {
 
-  interpolateColor: function (color1, color2, factor, a) {
-    if (arguments.length < 3) { 
-        factor = 0.5; 
-    }
-    var result = color1.slice();
-    for (var i = 0; i < 3; i++) {
-        result[i] = Math.round(result[i] + factor * (color2[i] - color1[i]));
-    }
-    return 'rgba(' + result[0] +','+ result[1] +','+ result[2] +','+ a + ')';
-  },
-  // My function to interpolate between two colors completely, returning an array
-  interpolateColors: function (color1, color2, steps, a) {
-      var stepFactor = 1 / (steps - 1),
-          interpolatedColorArray = [];
-
-      color1 = color1.match(/\d+/g).map(Number);
-      color2 = color2.match(/\d+/g).map(Number);
-
-      for(var i = 0; i < steps; i++) {
-          interpolatedColorArray.push(this.interpolateColor(color1, color2, stepFactor * i, a));
-      }
-
-      return interpolatedColorArray;
-  },
-
-
-  load: function(key, defaultVal) {
-    if (localStorage.getItem(key)) {
-      return JSON.parse(localStorage.getItem(key));
-    } else {
-      return defaultVal;
-    }
-  },
   task: function(name, exclusive) {
     var task = {
       name: name,
@@ -314,24 +287,37 @@ methods: {
     }
     return task
   },
+
+  defaultTasks: function() {
+    return [
+      this.task("Phone Call", false),
+      this.task('Chart Review', true), 
+      this.task("Reaching Patient", true),
+      this.task("Medical Visit", true),
+      this.task("Followup Coordination", true),
+      this.task("Patient Forms", true),
+      this.task("Note Writing", true),
+      this.task("Talk with Preceptor", true),
+    ];
+  },
+
   taskClicked: function(i) {
     var task = this.tasks[i];
     if (task.exclusive) {
-      this.tasks.forEach(t => {if (t.exclusive & t !== task) {t.active = false}});
+      this.tasks.forEach(t => {if (t !== task & t.exclusive & t.active === true) {
+          t.active = false
+          this.logMsg('Stopped ' + task.name)
+        }
+      });
     }
     task.active = !task.active;
     this.logMsg((task.active ? 'Started ' : 'Stopped ') + task.name)
   },
+
   createNewTaskClicked: function() {
     this.tasks.push(this.task(this.newTaskName || "New Task"))
   },
-  increaseActiveTasks: function() {
-    this.tasks.forEach(task => {
-      if (task.active & task.editTime == false) {
-        task.time += 1;
-      }
-    });
-  },
+
   newSessionClicked: function() {
     var session = {
       log: JSON.parse(JSON.stringify(this.log)),
@@ -339,45 +325,70 @@ methods: {
       editName: false,
       name: this.sessions[0].name,
     }
+    this.sessionNameIndex += 1;
     // insert second to last so "current session" object is always the most recent
     this.sessions.splice(1, 0, session)
     this.sessions[0].name = "Session " + this.sessionNameIndex;
-    this.sessionNameIndex += 1;
     this.log.length = 0;
     this.tasks.forEach(task => {
       task.time = 0;
-      task.active = false;
+      if (task.active) {task.active = false; this.logMsg('Stopped ' + task.name)}
     })
+    this.logMsg('Session Started')
   },
+
   sessionClicked: function(i) {
     this.selectedSession = i;
   },
-  logMsg: function(msg) {
-    this.log.push({time: Date(Date.now()).toString(), message: msg});
-  },
+
   deleteTask: function(i) {
-    this.$bvModal.msgBoxConfirm('Please confirm that you want to delete "' + this.tasks[i].name + '"', {
-      title: 'Are you sure?',
-      okVariant: 'danger',
-      okTitle: 'Delete',
-      footerClass: 'p-2',
-      hideHeaderClose: false,
-      centered: true
-    })
-    .then(value => {
-      if (value) {
-        this.tasks.splice(i, 1)
-      }
-    })
-    .catch(err => {
-      // An error occurred
-    })
+    this.confirmBefore('Please confirm that you want to delete "' + this.tasks[i].name + '"', function() {
+      vm.tasks.splice(i, 1)
+    }.bind(this));
   },
+
   deleteSession: function(i) {
     if (i === 0) {
       return;
     }
-    this.$bvModal.msgBoxConfirm('Please confirm that you want to delete "' + (this.sessions[i].name || 'Session ' + i) + '"', {
+    this.confirmBefore('Please confirm that you want to delete "' + (this.sessions[i].name) + '"', function() {
+      this.selectedSession = 0;
+      this.sessions.splice(i, 1)
+    }.bind(this))
+  },
+
+  resetApp: function() {
+    this.confirmBefore('This will clear out all sessions and logs.', function() {
+      localStorage.clear(); location.reload();
+    }.bind(this))
+  },
+
+  //////////////////////////////////////////////////////////////////////////////
+  // Helpers
+  //////////////////////////////////////////////////////////////////////////////
+
+  logMsg: function(msg) {
+    this.log.push({time: Date(Date.now()).toString(), message: msg});
+  },
+
+  increaseActiveTasks: function() {
+    this.tasks.forEach(task => {
+      if (task.active & task.editTime == false) {
+        task.time += 1;
+      }
+    });
+  },
+
+  load: function(key, defaultVal) {
+    if (localStorage.getItem(key)) {
+      return JSON.parse(localStorage.getItem(key));
+    } else {
+      return defaultVal;
+    }
+  },
+
+  confirmBefore: function(message, func) {
+    this.$bvModal.msgBoxConfirm(message, {
       title: 'Are you sure?',
       okVariant: 'danger',
       okTitle: 'Delete',
@@ -386,15 +397,11 @@ methods: {
       centered: true
     })
     .then(value => {
-      if (value) {
-        this.selectedSession = 0;
-        this.sessions.splice(i, 1)
-      }
+      if (value) { func() }
     })
-    .catch(err => {
-      // An error occurred
-    })
+    .catch(err => { console.log(err) })
   },
+
   copyTable: function(id) {
     var el = document.getElementById(id);
     var body = document.body, range, sel;
@@ -417,27 +424,29 @@ methods: {
       range.execCommand("Copy");
     }
   },
-  resetApp: function() {
-    this.$bvModal.msgBoxConfirm('This will clear out all sessions and logs.', {
-      title: 'Are you sure?',
-      okVariant: 'danger',
-      okTitle: 'Delete',
-      footerClass: 'p-2',
-      hideHeaderClose: false,
-      centered: true
-    })
-    .then(value => {
-      if (value) {
-        localStorage.clear(); location.reload();
-      }
-    })
-    .catch(err => { })
+
+  interpolateColor: function (color1, color2, factor, a) {
+    if (arguments.length < 3) {factor = 0.5;}
+    var result = color1.slice();
+    for (var i = 0; i < 3; i++) {
+      result[i] = Math.round(result[i] + factor * (color2[i] - color1[i]));
+    }
+    return 'rgba(' + result[0] +','+ result[1] +','+ result[2] +','+ a + ')';
+  },
+
+  interpolateColors: function (color1, color2, steps, a) {
+    var stepFactor = 1 / (steps - 1),
+        interpolatedColorArray = [];
+    color1 = color1.match(/\d+/g).map(Number);
+    color2 = color2.match(/\d+/g).map(Number);
+    for(var i = 0; i < steps; i++) {
+      interpolatedColorArray.push(this.interpolateColor(color1, color2, stepFactor * i, a));
+    }
+    return interpolatedColorArray;
   },
 }
 })
 window.vm = vm;
-
-
 </script>
 </body>
 </html>
